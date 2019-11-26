@@ -9,6 +9,19 @@ function va_display_number_of_views() {
 	_e( 'This product was viewed ' . ( empty( $views ) ? 0 : $views ) . ' times', 'storefrontchild' );
 }
 
+/**
+ * Display last purchase date
+ */
+add_action('woocommerce_product_meta_start', 'va_display_last_purchase_date',20 );
+function va_display_last_purchase_date(){
+	if ( is_singular( 'product' ) && ! is_admin() ) {
+		$last_date = get_post_meta( get_the_ID(), 'product_last_purchase_date', true );
+		if(! empty($last_date)) {
+			_e( 'Last time this product was bought ' . $last_date, 'storefrontchild' );
+		}
+	}
+}
+
 /***
  * Increase number of views, if product was loaded
  */
@@ -23,12 +36,21 @@ function va_increase_number_of_views() {
 /***
  * Update date of last purchase
  */
-add_action('woocommerce_thankyou', 'va_update_last_purchase_date');
+add_action('woocommerce_thankyou', 'va_update_last_purchase_date', 10);
 function va_update_last_purchase_date($order_id){
 	$order = wc_get_order($order_id);
 	$products = $order->get_items();
-	foreach ( $products as $product ) {
-		update_post_meta($product->get_id(), 'product_last_purchase_date', $order->get_date_created() );
+	foreach ( $products as $id => $product ) {
+		update_post_meta($product->get_product_id(), 'product_last_purchase_date', $order->get_date_created()->date('d.m.y') );
 	}
 
+}
+
+/***
+ * Remove billing postcode from checkout page to make easy demo testing
+ */
+add_filter( 'woocommerce_checkout_fields' , 'remove_billing_postcode_checkout' );
+function remove_billing_postcode_checkout( $fields ) {
+	unset($fields['billing']['billing_postcode']);
+	return $fields;
 }
