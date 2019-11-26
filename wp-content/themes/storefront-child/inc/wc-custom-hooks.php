@@ -1,16 +1,34 @@
 <?php
+/***
+ * Display number of views
+ */
 add_action( 'woocommerce_single_product_summary', 'va_display_number_of_views', 5 );
 add_action( 'woocommerce_after_shop_loop_item_title', 'va_display_number_of_views', 5 );
-
 function va_display_number_of_views() {
 	$views = get_post_meta( get_the_ID(), 'product_number_of_views', true );
 	_e( 'This product was viewed ' . ( empty( $views ) ? 0 : $views ) . ' times', 'storefrontchild' );
 }
 
+/***
+ * Increase number of views, if product was loaded
+ */
 add_action( 'wp_head', 'va_increase_number_of_views' );
 function va_increase_number_of_views() {
 	if ( is_singular( 'product' ) && ! is_admin() ) {
 		$prev_value = (int) get_post_meta( get_the_ID(), 'product_number_of_views', true );
 		update_post_meta( get_the_ID(), 'product_number_of_views', ++ $prev_value );
 	}
+}
+
+/***
+ * Update date of last purchase
+ */
+add_action('woocommerce_thankyou', 'va_update_last_purchase_date');
+function va_update_last_purchase_date($order_id){
+	$order = wc_get_order($order_id);
+	$products = $order->get_items();
+	foreach ( $products as $product ) {
+		update_post_meta($product->get_id(), 'product_last_purchase_date', $order->get_date_created() );
+	}
+
 }
